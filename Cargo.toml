@@ -12,3 +12,4 @@ tokio = { version = "1.47.1", features=["full"]}
 uuid = { version = "1.18.0", features = ["serde"] }
 aes = "0.8.3"
 aes-gcm = "0.10"
+base64 = "0.22.1"

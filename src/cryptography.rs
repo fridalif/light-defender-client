@@ -1,9 +1,39 @@
-use rsa::{pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey}, RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt};
+use rsa::{pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey, EncodeRsaPrivateKey, EncodeRsaPublicKey}, Pkcs1v15Encrypt, RsaPrivateKey, RsaPublicKey};
 use rand::{rngs::OsRng, RngCore};
 use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit, Nonce};
 use std::error::Error;
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 
 type AesGcm = Aes256Gcm;
+
+pub fn generate_rsa_keys() -> Result<(String, String), Box<dyn Error>> {
+    let mut rng = OsRng;
+    
+    let private_key = RsaPrivateKey::new(&mut rng, 2048)?;
+    
+    let public_key = RsaPublicKey::from(&private_key);
+    
+    let private_key_der = private_key.to_pkcs1_der()?;
+    let private_key_bytes = private_key_der.as_bytes();
+    
+    let public_key_der = public_key.to_pkcs1_der()?;
+    let public_key_bytes = public_key_der.as_bytes();
+    
+    let private_key_base64 = STANDARD.encode(private_key_bytes);
+    let public_key_base64 = STANDARD.encode(public_key_bytes);
+    
+    Ok((private_key_base64, public_key_base64))
+}
+
+pub fn base64_to_bytes(base64_string: &str) -> Result<Vec<u8>, Box<dyn Error>> {
+    Ok(STANDARD.decode(base64_string)?)
+}
+
+pub fn bytes_to_base64(bytes: &[u8]) -> String {
+    STANDARD.encode(bytes)
+}
+
+
 
 pub fn encrypt_for_client(data: &Vec<u8>, client_pk: &Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let public_key = RsaPublicKey::from_pkcs1_der(client_pk)?;
