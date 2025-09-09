@@ -1,8 +1,9 @@
 use rsa::{pkcs1::{DecodeRsaPrivateKey, DecodeRsaPublicKey}, RsaPrivateKey, RsaPublicKey, Pkcs1v15Encrypt};
-use rand::rngs::OsRng;
+use rand::{rngs::OsRng, RngCore};
+use aes_gcm::{aead::Aead, Aes256Gcm, KeyInit, Nonce};
+use std::error::Error;
 
-
-type AesGcm = Gcm<Aes256>;
+type AesGcm = Aes256Gcm;
 
 pub fn encrypt_for_client(data: &Vec<u8>, client_pk: &Vec<u8>) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
     let public_key = RsaPublicKey::from_pkcs1_der(client_pk)?;
@@ -39,7 +40,7 @@ pub fn decrypt_config(ciphertext: &[u8], key: &[u8]) -> Result<Vec<u8>, Box<dyn 
     let (nonce_bytes, encrypted_data) = ciphertext.split_at(nonce_size);
     let nonce = Nonce::from_slice(nonce_bytes);
     
-    let plaintext = cipher.decrypt(nonce, encrypted_data)?;
+    let plaintext = cipher.decrypt(nonce, encrypted_data).map_err(|_| "Failed to decrypt config")?;
     
     Ok(plaintext)
 }
@@ -61,7 +62,7 @@ pub fn encrypt_config(config_data: &[u8], key: &[u8]) -> Result<Vec<u8>, Box<dyn
     rand::thread_rng().fill_bytes(&mut nonce_bytes);
     let nonce = Nonce::from_slice(&nonce_bytes);
     
-    let ciphertext = cipher.encrypt(nonce, config_data)?;
+    let ciphertext = cipher.encrypt(nonce, config_data).map_err(|_| "Failed to encrypt config")?;
     
     let mut result = nonce_bytes.to_vec();
     result.extend_from_slice(&ciphertext);
