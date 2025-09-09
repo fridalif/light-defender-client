@@ -1,7 +1,7 @@
 use uuid::Uuid;
+use serde::Deserialize;
 
-
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct Config {
     pub id: Uuid,
     pub server_public_key: String,
@@ -17,7 +17,10 @@ impl Config {
         path: &str,
     ) -> Self {
         let config_str = std::fs::read_to_string(path).expect("Failed to read config file");
+        
         let config: Config = serde_json::from_str(&config_str).expect("Failed to parse config file");
+
+        
         config
     }
 }
