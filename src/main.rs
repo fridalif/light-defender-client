@@ -3,15 +3,21 @@ mod config;
 mod cryptography;
 
 use std::{error::Error, sync::{Arc, Mutex}};
-use config::Config;
+use config::{Config, AppConfig};
+
 
 fn main() -> Result<(), Box<dyn Error>>{
-    let current_configuration = Arc::new(Mutex::new(Config::new("../etc/config.bin")));
-    if current_configuration.lock().unwrap().client_public_key.is_empty() {
-        let (client_private_key, client_public_key) = cryptography::generate_rsa_keys().unwrap();
-        current_configuration.lock().unwrap().client_public_key = client_public_key;   
-        print!("{:?}", current_configuration);
-    }
-    print!("{:?}", current_configuration);
+    let current_configuration = Config::new("../etc/config.bin");
+    let (client_private_key, client_public_key) = cryptography::generate_rsa_keys().unwrap();
+
+    std::fs::write("../etc/client_public_key.bin", cryptography::encrypt_config(&client_public_key.as_bytes(), b"01234567890123456789012345678901").unwrap()).expect("Failed to write msg");
+    std::fs::write("../etc/client_private_key.bin", cryptography::encrypt_config(&client_private_key.as_bytes(), b"01234567890123456789012345678901").unwrap()).expect("Failed to write msg");
+    
+
+    let real_config = Arc::new(Mutex::new(AppConfig::new(current_configuration, client_private_key, client_public_key)));
+
+
+    print!("{:?}", real_config);
+    
     Ok(())
 }

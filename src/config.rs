@@ -3,11 +3,10 @@ use serde::{Serialize, Deserialize};
 use crate::cryptography;
 
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Config {
     pub id: Uuid,
     pub server_public_key: String,
-    pub client_public_key: String,
     pub token: String,
     pub connector_address: String,
 }
@@ -20,5 +19,22 @@ impl Config {
         let config_str = cryptography::decrypt_config(&config_str_encrypted, b"01234567890123456789012345678901").expect("Failed to decrypt config")    ;//"6ba7885277793bca54b3c26ee9a6b72a")?;
         let config: Config = serde_json::from_slice(&config_str).expect("Failed to parse config file");
         config
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct AppConfig {
+    pub client_config: Config,
+    pub client_private_key: String,
+    pub client_public_key: String    
+}
+
+impl AppConfig {
+    pub fn new(
+        client_config: Config,
+        client_private_key: String,
+        client_public_key: String
+    ) -> Self {
+        AppConfig { client_config, client_private_key, client_public_key }
     }
 }
