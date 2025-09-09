@@ -1,5 +1,7 @@
 use uuid::Uuid;
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
+use crate::cryptography;
+
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Config {
@@ -11,16 +13,13 @@ pub struct Config {
     pub connector_address: String,
 }
 
-//pub secret: 6ba7885277793bca54b3c26ee9a6b72a
 impl Config {
     pub fn new(
         path: &str,
     ) -> Self {
-        let config_str = std::fs::read_to_string(path).expect("Failed to read config file");
-        
-        let config: Config = serde_json::from_str(&config_str).expect("Failed to parse config file");
-
-        
+        let config_str_encrypted = std::fs::read(path)?;
+        let config_str = cryptography::decrypt_config(&config_str_encrypted, "6ba7885277793bca54b3c26ee9a6b72a")?;
+        let config: Config = serde_json::from_vec(&config_str).expect("Failed to parse config file");
         config
     }
 }
