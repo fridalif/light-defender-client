@@ -19,7 +19,7 @@ impl Config {
     ) -> Self {
         let config_str_encrypted = std::fs::read(path)?;
         let config_str = cryptography::decrypt_config(&config_str_encrypted, "6ba7885277793bca54b3c26ee9a6b72a")?;
-        let config: Config = serde_json::from_vec(&config_str).expect("Failed to parse config file");
+        let config: Config = serde_json::from_slice(&config_str).expect("Failed to parse config file");
         config
     }
 }
