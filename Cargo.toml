@@ -13,3 +13,5 @@ uuid = { version = "1.18.0", features = ["serde"] }
 aes = "0.8.3"
 aes-gcm = "0.10"
 base64 = "0.22.1"
+tokio-tungstenite = "0.20.0"
+futures-util = "0.3.0"
