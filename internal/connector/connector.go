@@ -78,14 +78,14 @@ func (c *Connector) readMessages(done chan struct{}, conn *websocket.Conn) {
 		}
 	}()
 
-	for {
-		_, message, err := conn.ReadMessage()
-		if err != nil {
-			log.Println("read:", err)
-			return
-		}
-		log.Printf("Received: %s", message)
-	}
+	//for {
+	//	_, message, err := conn.ReadMessage()
+	//	if err != nil {
+	//		log.Println("read:", err)
+	//		return
+	//	}
+	//	log.Printf("Received: %s", message)
+	//}
 }
 
 func (c *Connector) writeMessages(done chan struct{}, conn *websocket.Conn) {
@@ -96,18 +96,18 @@ func (c *Connector) writeMessages(done chan struct{}, conn *websocket.Conn) {
 		}
 	}()
 
-	attempts := 0
-	for {
-		if attempts > 10 {
-			return
-		}
-		time.Sleep(5 * time.Second)
-		attempts++
-		message := []byte("hello")
-		err := conn.WriteMessage(websocket.TextMessage, message)
-		if err != nil {
-			log.Println("write:", err)
-			return
-		}
-	}
+	//attempts := 0
+	//for {
+	//	if attempts > 10 {
+	//		return
+	//	}
+	//	time.Sleep(5 * time.Second)
+	//	attempts++
+	//	message := []byte("hello")
+	//	err := conn.WriteMessage(websocket.TextMessage, message)
+	//	if err != nil {
+	//		log.Println("write:", err)
+	//		return
+	//	}
+	//}
 }
