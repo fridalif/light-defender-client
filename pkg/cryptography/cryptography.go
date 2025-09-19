@@ -4,6 +4,8 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	cryptorand "crypto/rand"
+	"crypto/rsa"
+	"crypto/sha256"
 	"io"
 )
 
@@ -62,4 +64,32 @@ func DecryptConfig(cipherMes []byte, key []byte) ([]byte, error) {
 		return nil, err
 	}
 	return plaintext, nil
+}
+
+func EncryptMessage(publicKey *rsa.PublicKey, message []byte) ([]byte, error) {
+	cipherText, err := rsa.EncryptOAEP(
+		sha256.New(),
+		cryptorand.Reader,
+		publicKey,
+		message,
+		nil,
+	)
+	if err != nil {
+		return nil, EncryptMessageError(err)
+	}
+	return cipherText, nil
+}
+
+func DecryptMessage(privateKey *rsa.PrivateKey, cipher []byte) ([]byte, error) {
+	message, err := rsa.DecryptOAEP(
+		sha256.New(),
+		cryptorand.Reader,
+		privateKey,
+		cipher,
+		nil,
+	)
+	if err != nil {
+		return nil, DecryptMessageError(err)
+	}
+	return message, nil
 }
