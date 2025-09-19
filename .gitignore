@@ -1,1 +1,6 @@
 /target
+config.bin
+*.bin
+go.work.sum
+go.work
+keygenerator.go
