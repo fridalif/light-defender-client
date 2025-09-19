@@ -93,3 +93,11 @@ func DecryptMessage(privateKey *rsa.PrivateKey, cipher []byte) ([]byte, error) {
 	}
 	return message, nil
 }
+
+func GenerateKeys(bits int) (*rsa.PrivateKey, *rsa.PublicKey, error) {
+	privateKey, err := rsa.GenerateKey(cryptorand.Reader, bits)
+	if err != nil {
+		return nil, nil, err
+	}
+	return privateKey, &privateKey.PublicKey, nil
+}
