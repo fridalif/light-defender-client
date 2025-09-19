@@ -1,6 +1,8 @@
 package config
 
 import (
+	"crypto/rsa"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/json"
 	"light-defender-client/pkg/cryptography"
@@ -11,7 +13,7 @@ type PublicConfig struct {
 	ServerPublicKeyB64 string `json:"server_public_key"`
 	Token              string `json:"token"`
 	ConnectorAddress   string `json:"connector_address"`
-	ServerPublicKey    []byte
+	ServerPublicKey    *rsa.PublicKey
 }
 
 type PrivateConfig struct {
@@ -42,7 +44,10 @@ func NewConfig() (*Config, error) {
 		return nil, err
 	}
 
-	pubConfig.ServerPublicKey = []byte(serverPKFromB64)
+	pubConfig.ServerPublicKey, err = x509.ParsePKCS1PublicKey([]byte(serverPKFromB64))
+	if err != nil {
+		return nil, err
+	}
 
 	appConfig := &Config{&pubConfig, nil}
 	return appConfig, nil

@@ -4,6 +4,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
+	"encoding/json"
 	"light-defender-client/pkg/config"
 	"light-defender-client/pkg/cryptography"
 	"log"
@@ -49,7 +50,21 @@ func (c *Connector) Run() error {
 			"token":      c.AppConfig.PubConfig.Token,
 		}
 
-		err = wsConnection.WriteJSON(firstMessage)
+		firstMessageBytes, err := json.Marshal(firstMessage)
+		if err != nil {
+			wsConnection.Close()
+			log.Println(err)
+			continue
+		}
+
+		encryptedFirstMessage, err := cryptography.EncryptMessage(c.AppConfig.PubConfig.ServerPublicKey, firstMessageBytes)
+		if err != nil {
+			wsConnection.Close()
+			log.Println(err)
+			continue
+		}
+
+		err = wsConnection.WriteMessage(websocket.TextMessage, encryptedFirstMessage)
 		if err != nil {
 			wsConnection.Close()
 			log.Println(err)
