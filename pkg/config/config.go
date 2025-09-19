@@ -1,12 +1,17 @@
 package config
 
 import (
-	"fmt"
+	"encoding/base64"
+	"encoding/json"
 	"light-defender-client/pkg/cryptography"
 	"os"
 )
 
 type PublicConfig struct {
+	ServerPublicKeyB64 string `json:"server_public_key"`
+	Token              string `json:"token"`
+	ConnectorAddress   string `json:"connector_address"`
+	ServerPublicKey    []byte
 }
 
 type PrivateConfig struct {
@@ -26,6 +31,19 @@ func NewConfig() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Println(string(plaintext))
-	return nil, nil
+	var pubConfig PublicConfig
+	err = json.Unmarshal(plaintext, &pubConfig)
+	if err != nil {
+		return nil, err
+	}
+	serverPKFromB64, err := base64.StdEncoding.DecodeString(pubConfig.ServerPublicKeyB64)
+
+	if err != nil {
+		return nil, err
+	}
+
+	pubConfig.ServerPublicKey = []byte(serverPKFromB64)
+
+	appConfig := &Config{&pubConfig, nil}
+	return appConfig, nil
 }
