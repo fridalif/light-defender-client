@@ -12,8 +12,8 @@ type HashScanerI interface {
 	RunScheduler()
 	RunManual()
 	Scan()
-	ScanFolder(string) (map[string]interface{}, error)
-	ScanFile(string) (string, error)
+	ScanFolder(string) []FolderFile
+	ScanFile(string) FolderFile
 }
 
 type hashScaner struct {
@@ -45,58 +45,32 @@ func (hs *hashScaner) RunManual() {
 func (hs *hashScaner) Scan() {
 	hs.hsMutex.Lock()
 	defer hs.hsMutex.Unlock()
-	resultMap := make(map[string]interface{})
+	resultMap := []FolderMap{}
 	for _, folder := range hs.hsConfig.WatchingFolders {
 		info, err := os.Stat(folder)
+		curFolderMap := FolderMap{
+			Path: folder,
+		}
 		if err != nil {
-			resultMap[folder] = map[string]interface{}{
-				"error":  err.Error(),
-				"hashes": map[string]interface{}{},
-				"result": false,
-			}
+			curFolderMap.Result = false
+			curFolderMap.Error = err.Error()
+			resultMap = append(resultMap, curFolderMap)
 			continue
 		}
 		if info.Mode().IsDir() {
-			folderHashes, err := hs.ScanFolder(folder)
-			if err != nil {
-				resultMap[folder] = map[string]interface{}{
-					"error":  err.Error(),
-					"hashes": map[string]interface{}{},
-					"result": false,
-				}
-				continue
-			}
-			resultMap[folder] = map[string]interface{}{
-				"error":  "",
-				"hashes": folderHashes,
-				"result": true,
-			}
+			curFolderMap.Files = hs.ScanFolder(folder)
+			resultMap = append(resultMap, curFolderMap)
 			continue
 		}
 		if info.Mode().IsRegular() {
-			hash, err := hs.ScanFile(folder)
-			if err != nil {
-				resultMap[folder] = map[string]interface{}{
-					"error":  err.Error(),
-					"hashes": map[string]interface{}{},
-					"result": false,
-				}
-				continue
-			}
-			resultMap[folder] = map[string]interface{}{
-				"error": "",
-				"hashes": map[string]interface{}{
-					folder:   hash,
-					"error":  "",
-					"result": true,
-				},
-				"result": true,
-			}
+			curFolderMap.Files = []FolderFile{hs.ScanFile(folder)}
+			resultMap = append(resultMap, curFolderMap)
+			continue
 		}
 	}
 }
 
-func (hs *hashScaner) ScanFolder(folder string) (map[string]interface{}, error) {
+func (hs *hashScaner) ScanFolder(folder string) []FolderFile {
 	hashesMap := make(map[string]interface{})
 	files, err := os.ReadDir(folder)
 	if err != nil {
@@ -107,6 +81,6 @@ func (hs *hashScaner) ScanFolder(folder string) (map[string]interface{}, error) 
 	}
 }
 
-func (hs *hashScaner) ScanFile(file string) (string, error) {
+func (hs *hashScaner) ScanFile(file string) FolderFile {
 
 }
