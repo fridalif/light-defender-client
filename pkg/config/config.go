@@ -16,7 +16,14 @@ type PublicConfig struct {
 	ServerPublicKey    *rsa.PublicKey
 }
 
+type HashScanerConfig struct {
+	Interval        uint64            `json:"interval"`
+	WatchingFolders []string          `json:"watching_folders"`
+	States          map[string]string `json:"states"`
+}
+
 type PrivateConfig struct {
+	HSConfig *HashScanerConfig `json:"hash_scaner_config"`
 }
 
 type Config struct {
