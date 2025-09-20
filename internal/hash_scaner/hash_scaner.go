@@ -1,6 +1,8 @@
 package hashscaner
 
 import (
+	"crypto/sha256"
+	"fmt"
 	"light-defender-client/pkg/config"
 	"math/rand"
 	"os"
@@ -12,7 +14,7 @@ type HashScanerI interface {
 	RunScheduler()
 	RunManual()
 	Scan()
-	ScanFolder(string) []FolderFile
+	ScanFolder(string) ([]FolderFile, error)
 	ScanFile(string) FolderFile
 }
 
@@ -58,29 +60,67 @@ func (hs *hashScaner) Scan() {
 			continue
 		}
 		if info.Mode().IsDir() {
-			curFolderMap.Files = hs.ScanFolder(folder)
+			files, err := hs.ScanFolder(folder)
+			if err != nil {
+				curFolderMap.Result = false
+				curFolderMap.Error = err.Error()
+				continue
+			}
+			curFolderMap.Files = files
 			resultMap = append(resultMap, curFolderMap)
 			continue
 		}
 		if info.Mode().IsRegular() {
-			curFolderMap.Files = []FolderFile{hs.ScanFile(folder)}
+			file := hs.ScanFile(folder)
+			curFolderMap.Files = []FolderFile{file}
 			resultMap = append(resultMap, curFolderMap)
 			continue
 		}
 	}
 }
 
-func (hs *hashScaner) ScanFolder(folder string) []FolderFile {
-	hashesMap := make(map[string]interface{})
-	files, err := os.ReadDir(folder)
+func (hs *hashScaner) ScanFolder(folder string) ([]FolderFile, error) {
+	files := []FolderFile{}
+	folderFiles, err := os.ReadDir(folder)
 	if err != nil {
 		return nil, err
 	}
-	for object := range files {
-
+	for _, file := range folderFiles {
+		if file.Type().IsDir() {
+			folderResult, err := hs.ScanFolder(file.Name())
+			if err != nil {
+				files = append(files, FolderFile{
+					File:   file.Name(),
+					Error:  err.Error(),
+					Result: false,
+				})
+				continue
+			}
+			files = append(files, folderResult...)
+		}
+		if file.Type().IsRegular() {
+			files = append(files, hs.ScanFile(file.Name()))
+		}
 	}
+	return files, nil
 }
 
 func (hs *hashScaner) ScanFile(file string) FolderFile {
+	data, err := os.ReadFile(file)
+	if err != nil {
+		return FolderFile{
+			File:   file,
+			Error:  err.Error(),
+			Result: false,
+		}
+	}
 
+	hash := sha256.Sum256(data)
+
+	return FolderFile{
+		File:   file,
+		Hash:   fmt.Sprintf("%x", hash),
+		Result: true,
+		Error:  "",
+	}
 }
