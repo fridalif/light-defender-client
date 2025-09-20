@@ -84,8 +84,12 @@ func (hs *hashScaner) Scan() {
 				continue
 			}
 			resultMap[folder] = map[string]interface{}{
-				"error":  "",
-				"hashes": map[string]interface{}{folder: hash},
+				"error": "",
+				"hashes": map[string]interface{}{
+					folder:   hash,
+					"error":  "",
+					"result": true,
+				},
 				"result": true,
 			}
 		}
@@ -93,7 +97,14 @@ func (hs *hashScaner) Scan() {
 }
 
 func (hs *hashScaner) ScanFolder(folder string) (map[string]interface{}, error) {
+	hashesMap := make(map[string]interface{})
+	files, err := os.ReadDir(folder)
+	if err != nil {
+		return nil, err
+	}
+	for object := range files {
 
+	}
 }
 
 func (hs *hashScaner) ScanFile(file string) (string, error) {
