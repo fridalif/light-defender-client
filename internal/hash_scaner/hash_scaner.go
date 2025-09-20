@@ -8,6 +8,7 @@ import (
 	folderfile "light-defender-client/pkg/folder_file"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"slices"
 	"sync"
 	"time"
@@ -80,6 +81,7 @@ func (hs *hashScaner) Scan() {
 			continue
 		}
 	}
+	responseMap := map[string]interface{}{}
 
 }
 
@@ -90,7 +92,7 @@ func (hs *hashScaner) ScanFolder(folder string) ([]folderfile.FolderFile, error)
 		return nil, err
 	}
 	for _, file := range folderFiles {
-		if slices.Contains(hs.hsConfig.Exceptions, file.Name()) {
+		if slices.Contains(hs.hsConfig.Exceptions, filepath.Join(folder, file.Name())) {
 			continue
 		}
 		if file.Type().IsDir() {
@@ -106,7 +108,7 @@ func (hs *hashScaner) ScanFolder(folder string) ([]folderfile.FolderFile, error)
 			files = append(files, folderResult...)
 		}
 		if file.Type().IsRegular() {
-			files = append(files, hs.ScanFile(file.Name()))
+			files = append(files, hs.ScanFile(filepath.Join(folder, file.Name())))
 		}
 	}
 	return files, nil
