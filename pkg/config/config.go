@@ -6,6 +6,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"light-defender-client/pkg/cryptography"
+	folderfile "light-defender-client/pkg/folder_file"
 	"os"
 )
 
@@ -17,10 +18,10 @@ type PublicConfig struct {
 }
 
 type HashScanerConfig struct {
-	Interval        uint64            `json:"interval"`
-	WatchingFolders []string          `json:"watching_folders"`
-	States          map[string]string `json:"states"`
-	Exceptions      []string          `json:"exceptions"`
+	Interval        uint64                 `json:"interval"`
+	WatchingFolders []string               `json:"watching_folders"`
+	States          []folderfile.FolderMap `json:"states"`
+	Exceptions      []string               `json:"exceptions"`
 }
 
 type PrivateConfig struct {

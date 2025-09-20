@@ -1,4 +1,4 @@
-package hashscaner
+package folderfile
 
 type FolderFile struct {
 	File   string `json:"file"`

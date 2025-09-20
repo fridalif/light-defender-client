@@ -3,9 +3,12 @@ package hashscaner
 import (
 	"crypto/sha256"
 	"fmt"
+	"io"
 	"light-defender-client/pkg/config"
+	folderfile "light-defender-client/pkg/folder_file"
 	"math/rand"
 	"os"
+	"slices"
 	"sync"
 	"time"
 )
@@ -14,8 +17,8 @@ type HashScanerI interface {
 	RunScheduler()
 	RunManual()
 	Scan()
-	ScanFolder(string) ([]FolderFile, error)
-	ScanFile(string) FolderFile
+	ScanFolder(string) ([]folderfile.FolderFile, error)
+	ScanFile(string) folderfile.FolderFile
 }
 
 type hashScaner struct {
@@ -47,10 +50,10 @@ func (hs *hashScaner) RunManual() {
 func (hs *hashScaner) Scan() {
 	hs.hsMutex.Lock()
 	defer hs.hsMutex.Unlock()
-	resultMap := []FolderMap{}
+	resultMap := []folderfile.FolderMap{}
 	for _, folder := range hs.hsConfig.WatchingFolders {
 		info, err := os.Stat(folder)
-		curFolderMap := FolderMap{
+		curFolderMap := folderfile.FolderMap{
 			Path: folder,
 		}
 		if err != nil {
@@ -72,24 +75,28 @@ func (hs *hashScaner) Scan() {
 		}
 		if info.Mode().IsRegular() {
 			file := hs.ScanFile(folder)
-			curFolderMap.Files = []FolderFile{file}
+			curFolderMap.Files = []folderfile.FolderFile{file}
 			resultMap = append(resultMap, curFolderMap)
 			continue
 		}
 	}
+
 }
 
-func (hs *hashScaner) ScanFolder(folder string) ([]FolderFile, error) {
-	files := []FolderFile{}
+func (hs *hashScaner) ScanFolder(folder string) ([]folderfile.FolderFile, error) {
+	files := []folderfile.FolderFile{}
 	folderFiles, err := os.ReadDir(folder)
 	if err != nil {
 		return nil, err
 	}
 	for _, file := range folderFiles {
+		if slices.Contains(hs.hsConfig.Exceptions, file.Name()) {
+			continue
+		}
 		if file.Type().IsDir() {
 			folderResult, err := hs.ScanFolder(file.Name())
 			if err != nil {
-				files = append(files, FolderFile{
+				files = append(files, folderfile.FolderFile{
 					File:   file.Name(),
 					Error:  err.Error(),
 					Result: false,
@@ -105,21 +112,32 @@ func (hs *hashScaner) ScanFolder(folder string) ([]FolderFile, error) {
 	return files, nil
 }
 
-func (hs *hashScaner) ScanFile(file string) FolderFile {
-	data, err := os.ReadFile(file)
+func (hs *hashScaner) ScanFile(file string) folderfile.FolderFile {
+	data, err := os.Open(file)
 	if err != nil {
-		return FolderFile{
+		return folderfile.FolderFile{
+			File:   file,
+			Error:  err.Error(),
+			Result: false,
+		}
+	}
+	defer data.Close()
+
+	hasher := sha256.New()
+
+	if _, err := io.Copy(hasher, data); err != nil {
+		return folderfile.FolderFile{
 			File:   file,
 			Error:  err.Error(),
 			Result: false,
 		}
 	}
 
-	hash := sha256.Sum256(data)
+	hashBytes := hasher.Sum(nil)
 
-	return FolderFile{
+	return folderfile.FolderFile{
 		File:   file,
-		Hash:   fmt.Sprintf("%x", hash),
+		Hash:   fmt.Sprintf("%x", hashBytes),
 		Result: true,
 		Error:  "",
 	}
